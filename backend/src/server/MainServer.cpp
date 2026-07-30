@@ -1,8 +1,5 @@
-#include "../../inc/network/GateServer.hpp"
-#include "../../inc/network/SensorMqttClient.hpp"
 #include "../../inc/server/MainServer.hpp"
-#include "../repository/SqlParkingRepository.hpp"
-#include "../repository/RedisCacheRepository.hpp"
+#include "../../inc/repository/RedisCacheRepository.hpp"
 #include "../../inc/models/Dto.hpp"
 
 #include <iostream>
@@ -19,7 +16,6 @@ namespace parkpulse {
 MainServer::MainServer(int port) 
     : port_(port)
 {
-
 }
 
 MainServer::~MainServer()
@@ -43,8 +39,15 @@ void MainServer::start()
 
 void MainServer::stop() 
 {
-    close(server_fd_);
-    close(epoll_fd_);
+    if (server_fd_ >= 0) {
+        close(server_fd_);
+        server_fd_ = -1;
+    }
+
+    if (epoll_fd_ >= 0) {
+        close(epoll_fd_);
+        epoll_fd_ = -1;
+    }
 }
 
 // Private methods
@@ -107,6 +110,10 @@ void MainServer::acceptClient()
         &size
     );
 
+    if (client_fd < 0) {
+        return;
+    }
+
     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
     epoll_event event{};
@@ -139,6 +146,17 @@ void MainServer::receiveMessage(int client_fd)
 
 void MainServer::handle_message(const char* buffer, int bytes, int client_fd)
 {
+    (void)client_fd;
+    std::string message(buffer, bytes);
+    (void)message;
+    
+    const EntryRequest* request = reinterpret_cast<const EntryRequest*>(buffer);
+    
+    std::cout << "Received EntryRequest: parking_lot_id=" << request->parking_lot_id
+              << ", gate_id=" << request->gate_id
+              << ", wants_handicap=" << request->wants_handicap
+              << ", wants_electric=" << request->wants_electric
+              << std::endl;
     /*
     std::string message(buffer, bytes);
 

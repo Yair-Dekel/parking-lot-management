@@ -13,7 +13,6 @@
 
 namespace parkpulse {
 
-class IParkingRepository;
 class ICacheRepository;
 
 class MainServer {
@@ -29,13 +28,14 @@ private:
     void run();
     void acceptClient();
     void receiveMessage(int client_fd);
+    void handle_message(const char* buffer, int bytes, int client_fd);
 
 private:
     std::unique_ptr<ICacheRepository> cache_repository_;
 
     int port_ = SERVER_PORT;
-    int server_fd_;
-    int epoll_fd_;
+    int server_fd_ = -1;
+    int epoll_fd_ = -1;
 };
 
 } // namespace parkpulse
