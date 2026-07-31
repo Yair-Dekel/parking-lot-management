@@ -2,26 +2,40 @@
 #include <memory>
 #include <string>
 
+#include <sys/epoll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <cstring>
+
 #define SERVER_PORT 5000
 
 namespace parkpulse {
 
-class IParkingRepository;
 class ICacheRepository;
 
 class MainServer {
 public:
-    MainServer();
+    MainServer(int port = SERVER_PORT);
     ~MainServer();
 
     void start();
     void stop();
 
 private:
-    std::shared_ptr<IParkingRepository> sql_repository_;
-    std::shared_ptr<ICacheRepository> cache_repository_;
+    void setupSocket();
+    void run();
+    void acceptClient();
+    void receiveMessage(int client_fd);
+    void handle_message(const char* buffer, int bytes, int client_fd);
+
+private:
+    std::unique_ptr<ICacheRepository> cache_repository_;
 
     int port_ = SERVER_PORT;
+    int server_fd_ = -1;
+    int epoll_fd_ = -1;
 };
 
 } // namespace parkpulse
