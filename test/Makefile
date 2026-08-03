@@ -1,6 +1,8 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -Wall -Wextra -pedantic
+CXXFLAGS += -I/usr/include
 LDFLAGS ?= -pthread
+LDFLAGS += -lmosquitto
 
 TARGET := test_epoll
 
