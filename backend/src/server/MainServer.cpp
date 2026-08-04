@@ -17,8 +17,14 @@
 
 namespace parkpulse {
 
-MainServer::MainServer(int port) 
+MainServer::MainServer(int port = SERVER_PORT, std::string redis_host = DEFAULT_REDIS_HOST, 
+                       int redis_port = DEFAULT_REDIS_PORT, std::string mqtt_host = DEFAULT_MQTT_HOST, 
+                       int mqtt_port = DEFAULT_MQTT_PORT)
     : port_(port)
+    , redis_host_(std::move(redis_host))
+    , redis_port_(redis_port)
+    , mqtt_host_(std::move(mqtt_host))
+    , mqtt_port_(mqtt_port)
 {
 }
 
@@ -29,17 +35,17 @@ MainServer::~MainServer()
 
 void MainServer::start() 
 {
-    const std::string sql_connection_string = SQL_CONNECTION_STRING;
-    const std::string redis_host = REDIS_HOST;
-    const int redis_port = REDIS_PORT;
-
-    cache_repository_ = std::make_unique<RedisCacheRepository>(redis_host, redis_port);
+    cache_repository_ = std::make_unique<RedisCacheRepository>(redis_host_, redis_port_);
 
     setupSocket();
     setup_mqtt();
-    run();
 
-    std::cout << "ParkPulse main_server running. Ctrl+C to stop.\n";
+    std::cout << "ParkPulse main_server running on port " << port_
+              << " (redis=" << redis_host_ << ":" << redis_port_
+              << ", mqtt=" << mqtt_host_ << ":" << mqtt_port_
+              << "). Ctrl+C to stop.\n";
+
+    run();
 }
 
 void MainServer::stop() 

@@ -20,7 +20,13 @@ class ICacheRepository;
 
 class MainServer {
 public:
-    MainServer(int port = SERVER_PORT);
+    MainServer(
+        int port = SERVER_PORT,
+        std::string redis_host = DEFAULT_REDIS_HOST,
+        int redis_port = DEFAULT_REDIS_PORT,
+        std::string mqtt_host = DEFAULT_MQTT_HOST,
+        int mqtt_port = DEFAULT_MQTT_PORT
+    );
     ~MainServer();
 
     void start();
@@ -41,6 +47,11 @@ private:
     std::unique_ptr<ICacheRepository> cache_repository_;
 
     int port_ = SERVER_PORT;
+    std::string redis_host_ = DEFAULT_REDIS_HOST;
+    int redis_port_ = DEFAULT_REDIS_PORT;
+    std::string mqtt_host_ = DEFAULT_MQTT_HOST;
+    int mqtt_port_ = DEFAULT_MQTT_PORT;
+
     int server_fd_ = -1;
     int epoll_fd_ = -1;
 
