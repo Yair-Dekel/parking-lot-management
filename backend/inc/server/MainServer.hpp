@@ -11,6 +11,9 @@
 
 #define SERVER_PORT 5000
 
+struct mosquitto;
+struct mosquitto_message;
+
 namespace parkpulse {
 
 class ICacheRepository;
@@ -25,10 +28,14 @@ public:
 
 private:
     void setupSocket();
+    void setup_mqtt();
     void run();
     void acceptClient();
     void receiveMessage(int client_fd);
     void handle_message(const char* buffer, int bytes, int client_fd);
+    void handle_mqtt_message(const std::string& payload);
+
+    static void on_mqtt_message(mosquitto* mosq, void* obj, const mosquitto_message* message);
 
 private:
     std::unique_ptr<ICacheRepository> cache_repository_;
@@ -36,6 +43,8 @@ private:
     int port_ = SERVER_PORT;
     int server_fd_ = -1;
     int epoll_fd_ = -1;
+
+    mosquitto* mqtt_client_ = nullptr;
 };
 
 } // namespace parkpulse
