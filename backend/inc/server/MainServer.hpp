@@ -11,6 +11,11 @@
 
 #define SERVER_PORT 5000
 
+inline constexpr const char DEFAULT_REDIS_HOST[] = "localhost";
+inline constexpr int DEFAULT_REDIS_PORT = 6379;
+inline constexpr const char DEFAULT_MQTT_HOST[] = "localhost";
+inline constexpr int DEFAULT_MQTT_PORT = 1883;
+
 struct mosquitto;
 struct mosquitto_message;
 

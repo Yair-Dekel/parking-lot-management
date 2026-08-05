@@ -17,9 +17,7 @@
 
 namespace parkpulse {
 
-MainServer::MainServer(int port = SERVER_PORT, std::string redis_host = DEFAULT_REDIS_HOST, 
-                       int redis_port = DEFAULT_REDIS_PORT, std::string mqtt_host = DEFAULT_MQTT_HOST, 
-                       int mqtt_port = DEFAULT_MQTT_PORT)
+MainServer::MainServer(int port, std::string redis_host, int redis_port, std::string mqtt_host, int mqtt_port)
     : port_(port)
     , redis_host_(std::move(redis_host))
     , redis_port_(redis_port)
