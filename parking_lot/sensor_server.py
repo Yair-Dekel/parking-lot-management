@@ -71,7 +71,10 @@ class SensorServer:
         self._fd_to_socket = {}
         self._buffers = {}
 
-        self._mqtt_client = mqtt.Client(client_id=f"sensor_server_{self.sensor_server_id}")
+        self._mqtt_client = mqtt.Client(
+            client_id=f"sensor_server_{self.sensor_server_id}",
+            callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
+        )
         self._mqtt_client.on_connect = self._on_mqtt_connect
         self._mqtt_client.on_disconnect = self._on_mqtt_disconnect
 
@@ -237,8 +240,8 @@ class SensorServer:
         result = self._mqtt_client.publish(self.mqtt_topic, payload, qos=1)
         result.wait_for_publish()
 
-    def _on_mqtt_connect(self, client, userdata, flags, reason_code):
+    def _on_mqtt_connect(self, client, userdata, flags, reason_code, properties):
         pass
 
-    def _on_mqtt_disconnect(self, client, userdata, reason_code):
+    def _on_mqtt_disconnect(self, client, userdata, reason_code, properties):
         pass
