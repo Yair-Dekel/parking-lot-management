@@ -31,15 +31,7 @@ from typing import Optional
 
 import paho.mqtt.client as mqtt
 
-
-@dataclass
-class SpotUpdate:
-    lot_id: str
-    sensor_server_id: str
-    sensor_id: str
-    spot_id: str
-    is_occupied: bool
-    timestamp: float
+from spot import Spot
 
 
 class SensorServer:
@@ -202,40 +194,27 @@ class SensorServer:
     def _process_sensor_message(self, raw_message: str):
         try:
             payload = json.loads(raw_message)
-        except json.JSONDecodeError:
-            return
-
-        try:
-            sensor_id = payload["sensor_id"]
-            spot_id = payload["spot_id"]
-            is_occupied = bool(payload["is_occupied"])
-        except KeyError:
+            spot = Spot.from_dict(payload["spot"])
+        except (json.JSONDecodeError, KeyError, TypeError):
             return
 
         timestamp = payload.get("timestamp", time.time())
 
-        self.publish_spot_update(sensor_id, spot_id, is_occupied, timestamp)
+        self.publish_spot_update(spot, timestamp)
 
     # ------------------------------------------------------------------
     # MQTT: sensor server -> main server
     # ------------------------------------------------------------------
-    def publish_spot_update(
-        self,
-        sensor_id: str,
-        spot_id: str,
-        is_occupied: bool,
-        timestamp: Optional[float] = None,
-    ):
-        update = SpotUpdate(
-            lot_id=self.lot_id,
-            sensor_server_id=self.sensor_server_id,
-            sensor_id=sensor_id,
-            spot_id=spot_id,
-            is_occupied=is_occupied,
-            timestamp=timestamp if timestamp is not None else time.time(),
-        )
+    def publish_spot_update(self, spot: Spot, timestamp: Optional[float] = None):
 
-        payload = json.dumps(asdict(update))
+        message = {
+            "lot_id": self.lot_id,
+            "sensor_server_id": self.sensor_server_id,
+            "spot": spot.to_dict(),
+            "timestamp": timestamp if timestamp is not None else time.time(),
+        }
+
+        payload = json.dumps(message)
 
         result = self._mqtt_client.publish(self.mqtt_topic, payload, qos=1)
         result.wait_for_publish()

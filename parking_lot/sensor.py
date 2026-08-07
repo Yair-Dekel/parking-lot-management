@@ -6,13 +6,11 @@ Simulated parking spot sensor (lot component).
 In a real deployment a sensor would sit physically at one parking spot and
 push occupancy changes to its sensor server automatically. Here it's
 simulated: the simulation code creates a Sensor tied to one
-spot_id and calls report_occupancy() whenever that spot's state changes.
+Spot and calls report_occupancy() whenever that spot's state changes.
 
 Wire format sent to the sensor server (TCP, one JSON object per line):
     {
-        "sensor_id":   str,
-        "spot_id":     str,
-        "is_occupied": bool,
+        "spot":        dict,   # Spot.to_dict()
         "timestamp":   float
     }
 """
@@ -22,17 +20,16 @@ import socket
 import time
 from typing import Optional
 
+from spot import Spot
 
 class Sensor:
     def __init__(
         self,
-        sensor_id: str,
-        spot_id: str,
+        spot: Spot,
         sensor_server_host: str = "localhost",
         sensor_server_port: int = 6000,
     ):
-        self.sensor_id = sensor_id
-        self.spot_id = spot_id
+        self.spot = spot
         self.sensor_server_host = sensor_server_host
         self.sensor_server_port = sensor_server_port
 
@@ -55,9 +52,7 @@ class Sensor:
             raise RuntimeError("Sensor is not connected. Call connect() first.")
 
         message = {
-            "sensor_id": self.sensor_id,
-            "spot_id": self.spot_id,
-            "is_occupied": is_occupied,
+            "spot": self.spot.to_dict(),
             "timestamp": timestamp if timestamp is not None else time.time(),
         }
 
