@@ -31,7 +31,7 @@ from typing import Optional
 
 import paho.mqtt.client as mqtt
 
-from spot import Spot
+from .spot import Spot
 
 
 class SensorServer:

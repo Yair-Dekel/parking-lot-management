@@ -234,16 +234,17 @@ void MainServer::handle_mqtt_message(const std::string& payload)
         const nlohmann::json json_payload = nlohmann::json::parse(payload);
 
         const std::string lot_id = json_payload.at("lot_id").get<std::string>();
-        const std::string spot_id = json_payload.at("spot_id").get<std::string>();
-        const bool is_occupied = json_payload.at("is_occupied").get<bool>();
+        const std::string sensor_server_id = json_payload.at("sensor_server_id").get<std::string>();
+        const Spot spot = json_payload.at("spot").get<Spot>();
 
         std::cout << "Spot update received: lot_id=" << lot_id
-                  << ", spot_id=" << spot_id
-                  << ", is_occupied=" << is_occupied
+                  << ", sensor_server_id=" << sensor_server_id
+                  << ", spot_id=" << spot.id
+                  << ", taken=" << spot.taken
                   << std::endl;
 
         /*if (cache_repository_) {
-            cache_repository_->update_spot_occupancy(lot_id, spot_id, is_occupied);
+            cache_repository_->update_spot_occupancy(lot_id, spot);
         }*/
     }
     catch (const std::exception& e) {

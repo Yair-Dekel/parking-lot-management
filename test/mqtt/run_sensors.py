@@ -20,6 +20,7 @@ import argparse
 import time
 
 from parking_lot.sensor import Sensor
+from parking_lot.spot import Spot
 
 
 def parse_args():
@@ -38,7 +39,7 @@ def main():
     args = parse_args()
 
     sensors = [
-        Sensor(f"sensor_{i}", f"spot_{i}", args.host, args.port)
+        Sensor(Spot(parking_lot_id=0, id=i), args.host, args.port)
         for i in range(args.count)
     ]
 
@@ -47,16 +48,14 @@ def main():
         sensor.connect()
     print("All sensors connected.\n")
 
-    is_occupied = True
-
     for round_number in range(1, args.rounds + 1):
         print(f"--- Round {round_number} ---")
 
         for sensor in sensors:
-            sensor.report_occupancy(is_occupied)
-            print(f"Sent: sensor_id={sensor.sensor_id}, spot_id={sensor.spot_id}, is_occupied={is_occupied}")
+            sensor.spot.toggle_occupancy()
+            sensor.report_occupancy()
+            print(f"Sent: spot_id={sensor.spot.id}, taken={sensor.spot.taken}")
 
-        is_occupied = not is_occupied
         time.sleep(args.interval)
 
     print("\nDisconnecting sensors...")

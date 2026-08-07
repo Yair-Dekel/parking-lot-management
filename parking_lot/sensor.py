@@ -20,7 +20,7 @@ import socket
 import time
 from typing import Optional
 
-from spot import Spot
+from .spot import Spot
 
 class Sensor:
     def __init__(
@@ -47,7 +47,7 @@ class Sensor:
     def is_connected(self) -> bool:
         return self._socket is not None
 
-    def report_occupancy(self, is_occupied: bool, timestamp: Optional[float] = None):
+    def report_occupancy(self, timestamp: Optional[float] = None):
         if self._socket is None:
             raise RuntimeError("Sensor is not connected. Call connect() first.")
 
