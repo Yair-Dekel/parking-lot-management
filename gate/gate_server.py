@@ -20,17 +20,6 @@ class GateServer:
         self._register_sockets()
         self._event_loop()
 
-    def _create_listening_socket(self):
-        self.gate = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.gate.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.gate.bind(("0.0.0.0", 9000))
-        self.gate.listen(1000)
-        self.gate.setblocking(False)
-
-    def _register_sockets(self):
-        self.epoll = select.epoll()
-        self.epoll.register(self.central.fileno(), select.EPOLLIN)  # watch for incoming connections
-
     def _event_loop(self):
         print("Gate server started")
 
@@ -56,6 +45,17 @@ class GateServer:
 
         finally:
             self._cleanup()
+
+    def _create_listening_socket(self):
+        self.gate = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.gate.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.gate.bind(("0.0.0.0", 9000))
+        self.gate.listen(1000)
+        self.gate.setblocking(False)
+
+    def _register_sockets(self):
+        self.epoll = select.epoll()
+        self.epoll.register(self.central.fileno(), select.EPOLLIN)  # watch for incoming connections
 
     def _handle_new_connection(self, event):
         conn, addr = self.gate.accept()
