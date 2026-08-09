@@ -1,5 +1,4 @@
-from gate_server import GateServer
-
+from gate.gate_server import GateServer
 
 def main():
     gate = GateServer()

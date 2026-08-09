@@ -1,6 +1,6 @@
 import socket
 
-CENTRAL_PORT = 8000  # should fit the main server port
+CENTRAL_PORT = 5099  # should fit the main server port
 CENTRAL_HOST = "127.0.0.1"
 
 
