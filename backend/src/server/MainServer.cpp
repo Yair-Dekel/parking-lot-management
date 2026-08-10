@@ -31,6 +31,7 @@ namespace parkpulse
     void MainServer::start()
     {
         cache_repository_ = std::make_unique<RedisCacheRepository>(redis_host_, redis_port_);
+        cache_repository_->initialize_from_config("parking_lot/parking_lots.json");
 
         setupSocket();
         setup_mqtt();
@@ -197,7 +198,7 @@ namespace parkpulse
             return;
         }
 
-        // Lines 200 - 250 added by Ron
+        // Lines 200 - 236 added by Ron
         // Add newly received bytes to the buffer of this gate(client_fd)
         std::vector<char> &input_buffer = input_buffers_[client_fd];
 

@@ -1,0 +1,37 @@
+{
+  "parking_lots": [
+    {
+      "id": 1,
+      "size": 3,
+      "name": "Central Lot",
+      "location": "Jerusalem",
+      "status": "OPEN",
+      "spots": [
+        {
+          "parking_lot_id": 1,
+          "id": 1,
+          "taken": false,
+          "handicap": false,
+          "electric": false,
+          "floor": 0
+        },
+        {
+          "parking_lot_id": 1,
+          "id": 2,
+          "taken": false,
+          "handicap": true,
+          "electric": false,
+          "floor": 0
+        },
+        {
+          "parking_lot_id": 1,
+          "id": 3,
+          "taken": false,
+          "handicap": false,
+          "electric": true,
+          "floor": 1
+        }
+      ]
+    }
+  ]
+}
