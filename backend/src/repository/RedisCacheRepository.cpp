@@ -1,5 +1,4 @@
 #include "../../inc/repository/RedisCacheRepository.hpp"
-#include "../../inc/models/Spot.hpp"
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -10,6 +9,29 @@ namespace parkpulse
     RedisCacheRepository::RedisCacheRepository(const std::string &host, int port)
         : host_(host), port_(port)
     {
+        // Establish one persistent Redis connection for this repository instance
+        context_ = redisConnect(host_.c_str(), port_);
+
+        if (context_ == nullptr || context_->err)
+        {
+            std::string error = context_ ? context_->errstr : "Cannot allocate Redis context";
+
+            if (context_)
+            {
+                redisFree(context_);
+            }
+
+            throw std::runtime_error("Redis connection failed: " + error);
+        }
+    }
+
+    RedisCacheRepository::~RedisCacheRepository()
+    {
+        if (context_)
+        {
+            redisFree(context_);
+            context_ = nullptr;
+        }
     }
 
     void RedisCacheRepository::update_spot_occupancy(
@@ -27,6 +49,12 @@ namespace parkpulse
         (void)is_occupied;
     }
 
+    /**
+     * Initializes Redis from the static parking-lot configuration.
+     *
+     * The JSON file defines the parking lots and their spots.
+     * Each spot is converted to a Spot object and persisted through save_spot().
+     */
     void RedisCacheRepository::initialize_from_config(const std::string &config_path)
     {
         std::ifstream file(config_path);
@@ -47,21 +75,116 @@ namespace parkpulse
             std::string location = lot_json.at("location").get<std::string>();
             std::string status = lot_json.at("status").get<std::string>();
 
-            std::cout << "Lot " << lot_id << ", name=" << lot_name << std::endl;
-
             for (const auto &spot_json : lot_json["spots"])
             {
-
+                // Spot already provides JSON deserialization through from_json()
                 Spot spot = spot_json.get<Spot>();
-                std::cout
-                    << "Spot " << spot.id << ", taken=" << spot.taken << ", handicap=" << spot.handicap
-                    << ", electric=" << spot.electric << std::endl;
 
-                // TODO: save_spot(spot);
+                // Persist the initial state of this spot in Redis
+                save_spot(spot);
             }
 
             // TODO: save_parking_lot(...)
         }
+    }
+
+    /**
+     * Retrieves a Spot from Redis using HGETALL and reconstructs the corresponding Spot object.
+     */
+    Spot RedisCacheRepository::get_spot(int parking_lot_id, int spot_id)
+    {
+        redisReply *reply = static_cast<redisReply *>(
+            redisCommand(
+                context_,
+                "HGETALL parking:%d:spot:%d",
+                parking_lot_id,
+                spot_id));
+
+        if (reply == nullptr)
+        {
+            throw std::runtime_error("Redis HGETALL failed");
+        }
+
+        if (reply->type != REDIS_REPLY_ARRAY || reply->elements == 0)
+        {
+            freeReplyObject(reply);
+            throw std::runtime_error("Spot not found in Redis");
+        }
+
+        Spot spot{};
+
+        // HGETALL returns alternating field/value entries
+        for (size_t i = 0; i < reply->elements; i += 2)
+        {
+            std::string field = reply->element[i]->str;
+            std::string value = reply->element[i + 1]->str;
+
+            if (field == "parking_lot_id")
+            {
+                spot.parking_lot_id = std::stoi(value);
+            }
+            else if (field == "id")
+            {
+                spot.id = std::stoi(value);
+            }
+            else if (field == "taken")
+            {
+                spot.taken = std::stoi(value) != 0;
+            }
+            else if (field == "handicap")
+            {
+                spot.handicap = std::stoi(value) != 0;
+            }
+            else if (field == "electric")
+            {
+                spot.electric = std::stoi(value) != 0;
+            }
+            else if (field == "floor")
+            {
+                spot.floor = std::stoi(value);
+            }
+        }
+
+        freeReplyObject(reply);
+
+        return spot;
+    }
+
+    /**
+     * Stores a Spot as a Redis hash.
+     *
+     * Example key: parking:1:spot:2
+     *
+     * This allows individual spot fields, such as "taken", to be updated later without rewriting the entire object.
+     */
+    void RedisCacheRepository::save_spot(const Spot &spot)
+    {
+        redisReply *reply = static_cast<redisReply *>(
+            redisCommand(
+                context_,
+                "HSET parking:%d:spot:%d "
+                "parking_lot_id %d "
+                "id %d "
+                "taken %d "
+                "handicap %d "
+                "electric %d "
+                "floor %d",
+                spot.parking_lot_id,
+                spot.id,
+                spot.parking_lot_id,
+                spot.id,
+                spot.taken ? 1 : 0,
+                spot.handicap ? 1 : 0,
+                spot.electric ? 1 : 0,
+                spot.floor));
+
+        if (reply == nullptr)
+        {
+            throw std::runtime_error(
+                "Failed to save spot to Redis");
+        }
+
+        freeReplyObject(reply);
     }
 
 } // namespace parkpulse

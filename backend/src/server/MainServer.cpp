@@ -33,6 +33,16 @@ namespace parkpulse
         cache_repository_ = std::make_unique<RedisCacheRepository>(redis_host_, redis_port_);
         cache_repository_->initialize_from_config("parking_lot/parking_lots.json");
 
+        Spot spot = cache_repository_->get_spot(1, 2);
+
+        std::cout
+            << "spot.id=" << spot.id
+            << ", taken=" << spot.taken
+            << ", handicap=" << spot.handicap
+            << ", electric=" << spot.electric
+            << ", floor=" << spot.floor
+            << '\n';
+
         setupSocket();
         setup_mqtt();
 
@@ -198,13 +208,13 @@ namespace parkpulse
             return;
         }
 
-        // Lines 200 - 236 added by Ron
-        // Add newly received bytes to the buffer of this gate(client_fd)
+        // Lines 200 - 248 added by Ron
+        // Append the newly received TCP bytes to this Gate's persistent input buffer
         std::vector<char> &input_buffer = input_buffers_[client_fd];
 
         input_buffer.insert(input_buffer.end(), buffer, buffer + bytes);
 
-        // Need at least 4 bytes for payload_size
+        // Wait for more TCP data if the full header has not arrived yet
         if (input_buffer.size() < sizeof(uint32_t))
         {
             return;
@@ -214,6 +224,7 @@ namespace parkpulse
         uint32_t payload_size_network;
         std::memcpy(&payload_size_network, input_buffer.data(), sizeof(uint32_t));
         uint32_t payload_size = ntohl(payload_size_network);
+
         if (payload_size != ENTRY_REQUEST_PAYLOAD_SIZE)
         {
             std::cerr << "Invalid payload size: " << payload_size << std::endl;
@@ -233,10 +244,15 @@ namespace parkpulse
 
         handle_message(payload, client_fd);
 
-        // Remove processed frame from buffer
+        // Remove only the frame that was just processed, Any remaining bytes belong to a subsequent frame
         input_buffer.erase(input_buffer.begin(), input_buffer.begin() + overall_frame_size);
     }
 
+    /**
+     * Deserializes a complete EntryRequest payload received from a Gate.
+     *
+     * client_fd identifies the Gate connection and will later be used to send the corresponding EntryResponse back through the same socket.
+     */
     void MainServer::handle_message(const char *payload, int client_fd)
     {
         (void)client_fd;
@@ -245,10 +261,12 @@ namespace parkpulse
         uint32_t parking_lot_id_network;
         uint32_t gate_id_network;
 
+        // Convert serialized network-order values to host byte order.
         std::memcpy(&request_id_network, payload, sizeof(uint32_t));
         std::memcpy(&parking_lot_id_network, payload + PARKING_LOT_ID_OFFSET, sizeof(uint32_t));
         std::memcpy(&gate_id_network, payload + GATE_ID_OFFSET, sizeof(uint32_t));
 
+        // Convert serialized network-order values to host byte order.
         const uint32_t request_id = ntohl(request_id_network);
         const uint32_t parking_lot_id = ntohl(parking_lot_id_network);
         const uint32_t gate_id = ntohl(gate_id_network);
