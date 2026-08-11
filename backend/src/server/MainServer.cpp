@@ -19,7 +19,11 @@ namespace parkpulse
 {
 
     MainServer::MainServer(int port, std::string redis_host, int redis_port, std::string mqtt_host, int mqtt_port)
-        : port_(port), redis_host_(std::move(redis_host)), redis_port_(redis_port), mqtt_host_(std::move(mqtt_host)), mqtt_port_(mqtt_port)
+        : port_(port),
+          redis_host_(std::move(redis_host)),
+          redis_port_(redis_port),
+          mqtt_host_(std::move(mqtt_host)),
+          mqtt_port_(mqtt_port)
     {
     }
 
@@ -208,7 +212,7 @@ namespace parkpulse
             return;
         }
 
-        // Lines 200 - 248 added by Ron
+        // Lines 200 - 252 added by Ron
         // Append the newly received TCP bytes to this Gate's persistent input buffer
         std::vector<char> &input_buffer = input_buffers_[client_fd];
 
